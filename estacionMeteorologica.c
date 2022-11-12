@@ -30,26 +30,27 @@ typedef struct nodo {
 } TNodo;
 
 //perfiles de funciones principales
-void alta();
-void baja(int fecha);
-void modificar(int fecha);
-void mostrar();
+void alta(char name[50]);
+void baja(int ddmmyyyy,char name[50]);
+void modificar(int ddmmyyyy,char name[50]);
+void mostrar(char name[50]);
 int busqueda(TData a, long fecha, int cant);
-TNodo* temperaturaMax();
-TNodo* velocidadViento();
-TNodo* precipitacionMax();
+TNodo* temperaturaMax(char name[50]);
+TNodo* velocidadViento(char name[50]);
+TNodo* precipitacionMax(char name[50]);
 
 //perfiles de las funciones auxiliares
 TNodo* crearNodo();
 void liberar(TNodo **a);
 void intercambiar(regDiario *x, regDiario *y);
-TData arregloDeArchivo();
+TData arregloDeArchivo(char name[50]);
 
 //perfiles de las funciones llamadas por el switch
-void opcion5();
-void opcion6();
-void opcion7();
-void opcion8();
+void opcion5(char name[50]);
+void opcion6(char name[50]);
+void opcion7(char name[50]);
+void opcion8(char name[50]);
+void opcion9(char name[50]);
 
 regDiario datos;
 TData a;
@@ -59,7 +60,10 @@ long fecha;
 FILE* g;
 
 int main() {
-        
+    char nameAr[50];
+
+    printf("Ingrese el nombre del archivo: ");
+    scanf(" %s", nameAr);
     do{
         //menu que se mostrara cada vez que el usuario ejecute el programa
         printf("\n-----------------------------------\n");
@@ -81,43 +85,43 @@ int main() {
 
         switch (opcion){
             case 1:
-                alta();    
+                alta(nameAr);    
                 break;
 
             case 2:
                 printf("\nIngrese la fecha (ddmmyyyy) del registro que desea borrar: ");
                 scanf(" %ld", &fecha);
-                baja(fecha);
+                baja(fecha,nameAr);
                 break;
 
             case 3:
                 printf("\n Ingrese la fecha (ddmmyyyy) del registro que desea modificar: ");
                 scanf(" %ld", &fecha);
-                modificar(fecha);
+                modificar(fecha,nameAr);
                 break;
 
             case 4: 
-                mostrar();
+                mostrar(nameAr);
                 break;
 
             case 5:
-                opcion5();
+                opcion5(nameAr);
                 break;
 
             case 6:
-                opcion6();
+                opcion6(nameAr);
                 break;
 
             case 7:
-                opcion7();
+                opcion7(nameAr);
                 break;
 
             case 8:
-                opcion8();
+                opcion8(nameAr);
                 break;
             
             case 9:
-                //copia de seguridad del año en curso
+                opcion9(nameAr);
                 break;
 
             case 10:
@@ -133,10 +137,10 @@ int main() {
 }
 
 //definicion de las funciones principales
-void alta(){
+void alta(char name[50]){
     regDiario datos;
     FILE *f;
-    f = fopen("nov2022.dat", "a");
+    f = fopen(name, "a");
     
     if (f != NULL){
         //se realiza la carga de datos
@@ -180,18 +184,17 @@ void alta(){
     }else{
         printf("No se ha podido abrir el archivo!\n");
     }
-    
 }
 
-void baja(int fecha){
+void baja(int ddmmyyyy,char name[50]){
     FILE *f;
     regDiario datos;
-    f = fopen("nov2022.dat", "r+b");
+    f = fopen(name, "r+b");
     
     if (f != NULL){
-        //recorro el archivo hasta encontrar un registro con la misma fecha que el parametro
+        //recorro el archuivo hasta encontrar un registro con la misma fecha que el parametro
         while(fread(&datos, sizeof(regDiario), 1, f) != 0){
-            if(datos.ddmmyyyy == fecha){
+            if(datos.ddmmyyyy == ddmmyyyy){
                 if (datos.borrado == false){
                     //una vez encontrado, aplico el borrado logico, escribiendo el cambio en el archivo
                     datos.borrado = true;
@@ -209,16 +212,16 @@ void baja(int fecha){
     } 
 }
 
-void modificar(int fecha){
+void modificar(int ddmmyyyy,char name[50]){
     FILE *f;
-    f = fopen("nov2022.dat", "r+b");
     regDiario nuevoReg;
     regDiario aux;
+    f = fopen(name, "r+b");
     
     if(f != NULL){
         //recorro el archivo hasta encontrar un resgitro con la misma fecha que el parametro
         while(fread(&aux, sizeof(regDiario), 1, f) != 0){
-            if(aux.ddmmyyyy == fecha){
+            if(aux.ddmmyyyy == ddmmyyyy){
                 //realizo la carga de los datos modificados en una variable auxiliar
                 printf("Ingrese la fecha de hoy: \n");
                 scanf("%ld", &nuevoReg.ddmmyyyy);
@@ -232,17 +235,17 @@ void modificar(int fecha){
                 do{
                     printf("Ingrese el indice de humedad promedio del dia (entre 0 y 100): \n");
                     scanf("%d", &nuevoReg.HUM);
-                } while (nuevoReg.HUM < 0 || nuevoReg.HUM > 100);
+                } while (nuevoReg.HUM <= 0 || nuevoReg.HUM >= 100);
             
                 do{
                     printf("Ingrese la presion atmosferica promedio (PNM) del dia (entre 900 y 3500): \n");
                     scanf("%d", &nuevoReg.PNM);
-                } while (nuevoReg.PNM < 900 || nuevoReg.PNM > 3500);
+                } while (nuevoReg.PNM <= 900 || nuevoReg.PNM >= 3500);
             
                 do{
                     printf("Ingrese la direccion (en grados, de 0 a 360) del viento mas fuerte del dia: \n");
                     scanf("%d", &nuevoReg.DV);
-                } while (nuevoReg.DV < 0 || nuevoReg.DV > 360);
+                } while (nuevoReg.DV <= 0 || nuevoReg.DV >= 360);
             
                 printf("Ingrese la maxima velocidad de viento del dia: \n");
                 scanf("%d", &nuevoReg.FF);
@@ -267,10 +270,11 @@ void modificar(int fecha){
     }
 }
 
-void mostrar(){
+void mostrar(char name[50]){
     FILE *f;
-    f = fopen("nov2022.dat", "rb");
     regDiario aux;
+    f = fopen(name, "rb");
+    
     if(f != NULL){
         //recorro el archivo mostrando los registros si su campo "borrado" es false
         while(fread(&aux, sizeof(regDiario), 1, f) != 0){
@@ -284,6 +288,12 @@ void mostrar(){
                 printf("Direccion del viento con mayor intensidad (de 0 a 360): %d grados\n", aux.DV);
                 printf("Maxima velocidad de viento de la fecha: %d km/h\n", aux.FF);
                 printf("Precipitacion pluvial de la fecha: %d mm", aux.PP);
+                if(aux.borrado){
+                    printf("\n VERDADERO \n");
+                }
+                else{
+                    printf("\n FALSO \n");
+                }
                 printf("\n-----------------------------------\n");
             }
         }
@@ -295,7 +305,7 @@ void mostrar(){
 
 int busqueda(TData a, long fecha, int i){
     //si i es mayor a la cantidad total de registros, i no se corresponde con ningun registro
-    if(i > a.cant || i < a.cant){
+    if(i > a.cant){
         return -1;
     }else{
         //si fecha es igual a la fecha del registro actual, devuelvo su indice
@@ -308,13 +318,13 @@ int busqueda(TData a, long fecha, int i){
     }
 }
 
-TNodo* temperaturaMax(){
+TNodo* temperaturaMax(char name[50]){
     FILE* f;
     TNodo *aux, *aux2, *aux3;
     regDiario reg;
     int maxTemp;
 
-    f = fopen("nov2022.dat", "rb");
+    f = fopen(name, "rb");
     
     if(f == NULL){
         printf("El archivo esta vacio.");
@@ -347,16 +357,17 @@ TNodo* temperaturaMax(){
         }
     }
     fclose(f);
+    //retorno la cabeza de la lista con las temperaturas maximas
     return aux2;
 }
 
-TNodo* velocidadViento(){
+TNodo* velocidadViento(char name[50]){
     TData res;
-    int i,j;
+    int i, j;
     TNodo *aux, *aux2, *aux3;
 
     //en res, esta guardado todo el archivo pasado a un arreglo
-    res = arregloDeArchivo();
+    res = arregloDeArchivo(name);
     i = res.cant - 1;
     aux2 = NULL;
 
@@ -387,17 +398,18 @@ TNodo* velocidadViento(){
             }
         i++;
     }
+    //retorno la cabeza de la lista de las velocidades del viento
     return aux2;
 }
 
-TNodo* precipitacionMax(){
+TNodo* precipitacionMax(char name[50]){
     TData res;
     regDiario auxT;
     TNodo *aux,*aux2,*aux3;
-    int i,j;
+    int i, j;
 
     //en res, esta guardado todo el archivo pasado a un arreglo
-    res = arregloDeArchivo();
+    res = arregloDeArchivo(name);
     i = 1;
     
     //utilizando insertionSort, ordeno el arreglo
@@ -428,6 +440,7 @@ TNodo* precipitacionMax(){
         }
         i--;
     }
+    //retorno la cabeza de la lista con las precipitaciones maximas
     return aux2;
 }
 
@@ -463,13 +476,13 @@ void intercambiar(regDiario *x, regDiario *y){
     *y = aux;
 }
 
-TData arregloDeArchivo(){
+TData arregloDeArchivo(char name[50]){
     FILE* f;
     TData aux;
     regDiario reg;
     int i;
 
-    f = fopen("nov2022.dat","rb");
+    f = fopen(name,"rb");
 
     if(f == NULL){
         printf("El archivo esta vacio.\n");
@@ -487,19 +500,19 @@ TData arregloDeArchivo(){
 }
 
 //definicion de las funciones llamdas por el switch
-void opcion5(){
+void opcion5(char name[50]){
     printf("\n Ingrese la fecha del registro que desea buscar: ");
     scanf(" %ld", &fecha);
     fflush(stdin);
     
     //en a guardo el archivo en forma de arreglo
-    a = arregloDeArchivo();
+    a = arregloDeArchivo(name);
     //aplico la busqueda sobre el arrelgo con el archivo
     int p = busqueda(a, fecha, a.cant);
     printf("%d", p);
     
     if(p != -1){
-        g = fopen("nov2022.dat","rb");
+        g = fopen(name,"rb");
         fseek(g, (p * (sizeof(regDiario)) - (sizeof(regDiario))), SEEK_SET);
         
         //muestro los datos del registro que se corresponden a la fecha indicada
@@ -521,9 +534,9 @@ void opcion5(){
     memset(a.reg,0,max);
 }
 
-void opcion6(){
+void opcion6(char name[50]){
     //en un puntero, guardo la lista con las temperaturas maximas
-    listTempMax = temperaturaMax();  
+    listTempMax = temperaturaMax(name);  
     //le paso la direccion de memoria de la cabeza de la lista de temperaturas maximas a un puntero auxiliar
     aux = listTempMax;
 
@@ -537,9 +550,9 @@ void opcion6(){
     liberar(&listTempMax);
 }
 
-void opcion7(){
+void opcion7(char name[50]){
     //en un puntero, guardo la lista de la velocidad del viento (ordenada, de mayor a menor)
-    listVientoVel = velocidadViento();
+    listVientoVel = velocidadViento(name);
     //en un puntero auxiliar, guardo la cabeza de la lista de la velocidad del viento
     aux = listVientoVel;
     i = 1;
@@ -557,9 +570,9 @@ void opcion7(){
     liberar(&listVientoVel);
 }
 
-void opcion8(){
+void opcion8(char name[50]){
     //en un puntero, guardo la lista con las maximas precipitaciones (ordenadas, de menor a mayor)
-    listPreciMax = precipitacionMax();
+    listPreciMax = precipitacionMax(name);
     //en un puntero auxiliar, guardo la cabeza de la lista de maximas precipitaciones
     aux = listPreciMax;
     i = 1;
@@ -574,4 +587,19 @@ void opcion8(){
         i++;
     } 
     liberar(&listPreciMax);
+}
+
+void opcion9(char name[50]){
+    FILE* f;
+
+    f = fopen(name,"rb");
+    g = fopen(("copia_seguridad_%s",name),"wb");
+
+    while(fread(&datos,sizeof(regDiario),1,f) != 0){
+        if(!(datos.borrado)){
+            fwrite(&datos,sizeof(datos),1,g);
+        }
+    }
+    fclose(f);
+    fclose(g);
 }
