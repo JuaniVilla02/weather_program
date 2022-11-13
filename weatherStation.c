@@ -29,6 +29,15 @@ typedef struct nodo {
     struct nodo *next;
 } TNodo;
 
+//variables usada en el programa
+regDiario datos;
+TData regAr;
+TNodo *listTempMax, *listVientoVel, *listPreciMax, *aux;
+FILE* f;
+FILE* g;
+long fecha;
+int opcion, i;
+
 //perfiles de funciones principales
 void alta(char name[50]);
 void baja(int ddmmyyyy,char name[50]);
@@ -51,13 +60,6 @@ void opcion6(char name[50]);
 void opcion7(char name[50]);
 void opcion8(char name[50]);
 void opcion9(char name[50]);
-
-regDiario datos;
-TData a;
-TNodo *listTempMax, *listVientoVel, *listPreciMax, *aux;
-int opcion, i;
-long fecha;
-FILE* g;
 
 int main() {
     char nameAr[50];
@@ -139,7 +141,6 @@ int main() {
 //definicion de las funciones principales
 void alta(char name[50]){
     regDiario datos;
-    FILE *f;
     f = fopen(name, "a");
     
     if (f != NULL){
@@ -187,7 +188,6 @@ void alta(char name[50]){
 }
 
 void baja(int ddmmyyyy,char name[50]){
-    FILE *f;
     regDiario datos;
     f = fopen(name, "r+b");
     
@@ -213,7 +213,6 @@ void baja(int ddmmyyyy,char name[50]){
 }
 
 void modificar(int ddmmyyyy,char name[50]){
-    FILE *f;
     regDiario nuevoReg;
     regDiario aux;
     f = fopen(name, "r+b");
@@ -271,7 +270,6 @@ void modificar(int ddmmyyyy,char name[50]){
 }
 
 void mostrar(char name[50]){
-    FILE *f;
     regDiario aux;
     f = fopen(name, "rb");
     
@@ -477,7 +475,6 @@ void intercambiar(regDiario *x, regDiario *y){
 }
 
 TData arregloDeArchivo(char name[50]){
-    FILE* f;
     TData aux;
     regDiario reg;
     int i;
@@ -495,6 +492,7 @@ TData arregloDeArchivo(char name[50]){
             i++;
         }
         aux.cant = i;
+        fclose(f);
         return aux;
     }
 }
@@ -502,13 +500,13 @@ TData arregloDeArchivo(char name[50]){
 //definicion de las funciones llamdas por el switch
 void opcion5(char name[50]){
     printf("\n Ingrese la fecha del registro que desea buscar: ");
-    scanf(" %ld", &fecha);
+    scanf(" %ld", &fecha);  
     fflush(stdin);
     
     //en a guardo el archivo en forma de arreglo
-    a = arregloDeArchivo(name);
+    regAr = arregloDeArchivo(name);
     //aplico la busqueda sobre el arrelgo con el archivo
-    int p = busqueda(a, fecha, a.cant);
+    int p = busqueda(regAr, fecha, a.cant);
     printf("%d", p);
     
     if(p != -1){
@@ -551,6 +549,25 @@ void opcion6(char name[50]){
 }
 
 void opcion7(char name[50]){
+    //en un puntero, guardo la lista con las maximas precipitaciones (ordenadas, de menor a mayor)
+    listPreciMax = precipitacionMax(name);
+    //en un puntero auxiliar, guardo la cabeza de la lista de maximas precipitaciones
+    aux = listPreciMax;
+    i = 1;
+
+    //muestro las primeras 10 mayores precipitaciones            
+    while((aux != NULL) && (i <= 10)){
+        printf("\n-----------------------------------\n");
+        printf("Fecha del registro: %ld\n", aux->info.ddmmyyyy);
+        printf("Precipitacion pluvial de la fecha: %d mm", aux->info.PP);
+        printf("\n-----------------------------------\n");
+        aux = aux->next;
+        i++;
+    } 
+    liberar(&listPreciMax);
+}
+
+void opcion8(char name[50]){
     //en un puntero, guardo la lista de la velocidad del viento (ordenada, de mayor a menor)
     listVientoVel = velocidadViento(name);
     //en un puntero auxiliar, guardo la cabeza de la lista de la velocidad del viento
@@ -570,31 +587,12 @@ void opcion7(char name[50]){
     liberar(&listVientoVel);
 }
 
-void opcion8(char name[50]){
-    //en un puntero, guardo la lista con las maximas precipitaciones (ordenadas, de menor a mayor)
-    listPreciMax = precipitacionMax(name);
-    //en un puntero auxiliar, guardo la cabeza de la lista de maximas precipitaciones
-    aux = listPreciMax;
-    i = 1;
-
-    //muestro las primeras 10 mayores precipitaciones            
-    while((aux != NULL) && (i <= 10)){
-        printf("\n-----------------------------------\n");
-        printf("Fecha del registro: %ld\n", aux->info.ddmmyyyy);
-        printf("Precipitacion pluvial de la fecha: %d mm", aux->info.PP);
-        printf("\n-----------------------------------\n");
-        aux = aux->next;
-        i++;
-    } 
-    liberar(&listPreciMax);
-}
-
 void opcion9(char name[50]){
-    FILE* f;
-
+    //abro ambos archivos (el actual, y el cual en donde voy a guardar la copia de seguridad)
     f = fopen(name,"rb");
     g = fopen(("copia_seguridad_%s",name),"wb");
 
+    //a los registros que no estan borrados (borrado == false), los guarda en el nuevo archivo
     while(fread(&datos,sizeof(regDiario),1,f) != 0){
         if(!(datos.borrado)){
             fwrite(&datos,sizeof(datos),1,g);
