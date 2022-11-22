@@ -585,12 +585,9 @@ void opcion5(char name[50]){
     fflush(stdin);
     printf("\n Ingrese el mes del registro(1-12):");
     scanf(" %d", &fechac.mm);  
-<<<<<<< HEAD
     fflush(stdin);
     printf("\n Ingrese el año del registro(2022):");
     scanf(" %d", &fechac.yyyy);  
-=======
->>>>>>> 47e229f8b8b2f7fef477a615fcf0bceaedda9b47
     fflush(stdin);
     printf("\n Ingrese el año del registro(2022):");
     scanf(" %d", &fechac.yyyy);  
