@@ -2,7 +2,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
-#define max 9999
+#define max 1000
 
 // registro encargado de almacenar todos los datos meteorologicos
 typedef struct regDiario{
@@ -17,11 +17,34 @@ typedef struct regDiario{
     bool borrado; 
 }regDiario;
 
+typedef struct fecha{
+    int dd;
+    int mm;
+    int yyyy;
+}TFecha;
+
+typedef struct regDiarioC{
+    TFecha ddmmyyyy;
+    int tmax;
+    int tmin;
+    int HUM;
+    int PNM;
+    int DV;
+    int FF;
+    int PP;
+    bool borrado; 
+}regDiarioC;
+
 //dato compuesto que almacena un arreglo de registros regDiario y la cantidad de elementos en el arreglo
 typedef struct {
     regDiario reg[max];
     int cant;
 } TData;
+
+typedef struct {
+    regDiarioC reg[max];
+    int cant;
+} TDatac;
 
 //dato compuesto que indica el tipo de los nodos de la LSE usada en algunas de las funciones del programa
 typedef struct nodo {
@@ -29,12 +52,24 @@ typedef struct nodo {
     struct nodo *next;
 } TNodo;
 
+
+
+//variables usada en el programa
+regDiario datos;
+TData regAr;
+TNodo *listTempMax, *listVientoVel, *listPreciMax, *aux;
+FILE* f;
+FILE* g;
+long fecha;
+int opcion, i;
+
 //perfiles de funciones principales
 void alta(char name[50]);
 void baja(int ddmmyyyy,char name[50]);
 void modificar(int ddmmyyyy,char name[50]);
 void mostrar(char name[50]);
 int busqueda(TData a, long fecha, int cant);
+int busquedac(TDatac a,TFecha fecha,int ini, int fin);
 TNodo* temperaturaMax(char name[50]);
 TNodo* velocidadViento(char name[50]);
 TNodo* precipitacionMax(char name[50]);
@@ -44,6 +79,7 @@ TNodo* crearNodo();
 void liberar(TNodo **a);
 void intercambiar(regDiario *x, regDiario *y);
 TData arregloDeArchivo(char name[50]);
+TDatac arregloDeArchivoC(char name[50]);
 
 //perfiles de las funciones llamadas por el switch
 void opcion5(char name[50]);
@@ -52,18 +88,13 @@ void opcion7(char name[50]);
 void opcion8(char name[50]);
 void opcion9(char name[50]);
 
-regDiario datos;
-TData a;
-TNodo *listTempMax, *listVientoVel, *listPreciMax, *aux;
-int opcion, i;
-long fecha;
-FILE* g;
-
 int main() {
     char nameAr[50];
 
     printf("Ingrese el nombre del archivo: ");
     scanf(" %s", nameAr);
+    f = fopen(nameAr,"ab");
+    fclose(f);
     do{
         //menu que se mostrara cada vez que el usuario ejecute el programa
         printf("\n-----------------------------------\n");
@@ -139,7 +170,6 @@ int main() {
 //definicion de las funciones principales
 void alta(char name[50]){
     regDiario datos;
-    FILE *f;
     f = fopen(name, "a");
     
     if (f != NULL){
@@ -187,7 +217,6 @@ void alta(char name[50]){
 }
 
 void baja(int ddmmyyyy,char name[50]){
-    FILE *f;
     regDiario datos;
     f = fopen(name, "r+b");
     
@@ -213,7 +242,6 @@ void baja(int ddmmyyyy,char name[50]){
 }
 
 void modificar(int ddmmyyyy,char name[50]){
-    FILE *f;
     regDiario nuevoReg;
     regDiario aux;
     f = fopen(name, "r+b");
@@ -271,7 +299,6 @@ void modificar(int ddmmyyyy,char name[50]){
 }
 
 void mostrar(char name[50]){
-    FILE *f;
     regDiario aux;
     f = fopen(name, "rb");
     
@@ -300,21 +327,6 @@ void mostrar(char name[50]){
         fclose(f);	
     }else{
         printf("No se ha podido abrir el archivo!\n");
-    }
-}
-
-int busqueda(TData a, long fecha, int i){
-    //si i es mayor a la cantidad total de registros, i no se corresponde con ningun registro
-    if(i > a.cant){
-        return -1;
-    }else{
-        //si fecha es igual a la fecha del registro actual, devuelvo su indice
-        if(a.reg[i].ddmmyyyy == fecha && a.reg[i].borrado == false){
-            return i + 1;
-        }else{
-            //sino, llamo recursivamente decrementando a i para acotar la busqueda
-            return busqueda(a, fecha, i - 1);
-        }
     }
 }
 
@@ -476,8 +488,38 @@ void intercambiar(regDiario *x, regDiario *y){
     *y = aux;
 }
 
+TDatac arregloDeArchivoC(char name[50]){
+    TDatac aux;
+    regDiario reg;
+    int i;
+
+    f = fopen(name,"rb");
+
+    if(f == NULL){
+        printf("El archivo esta vacio.\n");
+    }else{
+        i = 0;
+
+        //leo los registros del archivo y los paso a un arreglo
+        while (fread(&reg, sizeof(reg), 1, f) != 0 && reg.borrado == false){
+            aux.reg[i].ddmmyyyy.dd = reg.ddmmyyyy/1000000;
+            aux.reg[i].ddmmyyyy.mm = (reg.ddmmyyyy/10000) - (aux.reg[i].ddmmyyyy.dd*100);
+            aux.reg[i].ddmmyyyy.yyyy = reg.ddmmyyyy - (aux.reg[i].ddmmyyyy.mm*10000);
+            aux.reg[i].tmax = reg.tmax;
+            aux.reg[i].tmin = reg.tmin;
+            aux.reg[i].HUM = reg.HUM;
+            aux.reg[i].PNM = reg.PNM;
+            aux.reg[i].DV = reg.DV;
+            aux.reg[i].FF = reg.FF;
+            aux.reg[i].PP = reg.PP;
+            i++;
+        }
+        aux.cant = i;
+        fclose(f);
+        return aux;
+    }
+}
 TData arregloDeArchivo(char name[50]){
-    FILE* f;
     TData aux;
     regDiario reg;
     int i;
@@ -495,20 +537,64 @@ TData arregloDeArchivo(char name[50]){
             i++;
         }
         aux.cant = i;
+        fclose(f);
         return aux;
     }
 }
 
+int busqueda(TData a, long fecha, int i){
+    if(i < 0){
+        return -1;
+    }else{
+        //si fecha es igual a la fecha del registro actual, devuelvo su indice
+        if(a.reg[i].ddmmyyyy == fecha){
+            return i;
+        }else{
+            //sino, llamo recursivamente decrementando a i para acotar la busqueda
+            return busqueda(a, fecha, i - 1);
+        }
+    }
+} 
+
+int busquedac(TDatac a,TFecha fecha,int ini, int fin){
+    if(ini > fin) return -1;
+
+    int indiceMitad = floor((ini + fin) / 2);
+
+    TFecha fechaMitad = a.reg[indiceMitad].ddmmyyyy;
+    if((fecha.dd == fechaMitad.dd) && (fecha.mm == fechaMitad.mm)){
+        return indiceMitad + 1;
+    }
+
+    if((fecha.mm < fechaMitad.mm) || ((fecha.dd < fechaMitad.dd) && (fecha.mm == fechaMitad.mm))){
+        fin = indiceMitad - 1;
+    }else{
+        ini = indiceMitad + 1;
+    }
+    return busquedac(a,fecha,ini,fin);
+} 
+
 //definicion de las funciones llamdas por el switch
 void opcion5(char name[50]){
-    printf("\n Ingrese la fecha del registro que desea buscar: ");
-    scanf(" %ld", &fecha);
+
+    TDatac regArc;
+    TFecha fechac;
+
+    printf("\n Ingrese el dia del registro(1-31):");
+    scanf(" %d", &fechac.dd);  
+    fflush(stdin);
+    printf("\n Ingrese el mes del registro(1-12):");
+    scanf(" %d", &fechac.mm);  
+    fflush(stdin);
+    printf("\n Ingrese el año del registro(2022):");
+    scanf(" %d", &fechac.yyyy);  
     fflush(stdin);
     
+    
     //en a guardo el archivo en forma de arreglo
-    a = arregloDeArchivo(name);
+    regArc = arregloDeArchivoC(name);
     //aplico la busqueda sobre el arrelgo con el archivo
-    int p = busqueda(a, fecha, a.cant);
+    int p = busquedac(regArc, fechac, 0, regArc.cant-1);
     printf("%d", p);
     
     if(p != -1){
@@ -531,7 +617,7 @@ void opcion5(char name[50]){
         printf("El registro no existe.");
     }
     fclose(g);
-    memset(a.reg,0,max);
+    memset(regAr.reg, 0, max);
 }
 
 void opcion6(char name[50]){
@@ -551,6 +637,25 @@ void opcion6(char name[50]){
 }
 
 void opcion7(char name[50]){
+    //en un puntero, guardo la lista con las maximas precipitaciones (ordenadas, de menor a mayor)
+    listPreciMax = precipitacionMax(name);
+    //en un puntero auxiliar, guardo la cabeza de la lista de maximas precipitaciones
+    aux = listPreciMax;
+    i = 1;
+
+    //muestro las primeras 10 mayores precipitaciones            
+    while((aux != NULL) && (i <= 10)){
+        printf("\n-----------------------------------\n");
+        printf("Fecha del registro: %ld\n", aux->info.ddmmyyyy);
+        printf("Precipitacion pluvial de la fecha: %d mm", aux->info.PP);
+        printf("\n-----------------------------------\n");
+        aux = aux->next;
+        i++;
+    } 
+    liberar(&listPreciMax);
+}
+
+void opcion8(char name[50]){
     //en un puntero, guardo la lista de la velocidad del viento (ordenada, de mayor a menor)
     listVientoVel = velocidadViento(name);
     //en un puntero auxiliar, guardo la cabeza de la lista de la velocidad del viento
@@ -570,33 +675,20 @@ void opcion7(char name[50]){
     liberar(&listVientoVel);
 }
 
-void opcion8(char name[50]){
-    //en un puntero, guardo la lista con las maximas precipitaciones (ordenadas, de menor a mayor)
-    listPreciMax = precipitacionMax(name);
-    //en un puntero auxiliar, guardo la cabeza de la lista de maximas precipitaciones
-    aux = listPreciMax;
-    i = 1;
-
-    //muestro las primeras 10 mayores precipitaciones            
-    while((aux != NULL) && (i <= 10)){
-        printf("\n-----------------------------------\n");
-        printf("Fecha del registro: %ld\n", aux->info.ddmmyyyy);
-        printf("Precipitacion pluvial de la fecha: %d mm", aux->info.PP);
-        printf("\n-----------------------------------\n");
-        aux = aux->next;
-        i++;
-    } 
-    liberar(&listPreciMax);
-}
-
 void opcion9(char name[50]){
-    FILE* f;
+    //abro ambos archivos (el actual, y el cual en donde voy a guardar la copia de seguridad)
 
+    char name2[50];
+    strcpy(name2, "copia_seguridad_");
+    strcat(name2,name);
     f = fopen(name,"rb");
-    g = fopen(("copia_seguridad_%s",name),"wb");
+    g = fopen(name2,"wb+");
 
+    //rewind(f);
+
+    //a los registros que no estan borrados (borrado == false), los guarda en el nuevo archivo
     while(fread(&datos,sizeof(regDiario),1,f) != 0){
-        if(!(datos.borrado)){
+        if(datos.borrado == false){
             fwrite(&datos,sizeof(datos),1,g);
         }
     }
